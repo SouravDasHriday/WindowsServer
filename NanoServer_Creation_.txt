@@ -1,0 +1,57 @@
+1.Import nano server ps module in to session
+Import-Module D:\NanoServer\NanoServerImageGenerator -Verbose
+
+2. Create a basic nono server (NANO1)
+New-NanoServerImage -MediaPath D: -BasePath C:\NanoSRV\base -TargetPath C:\NanoSRV\NANO01.vhdx -DeploymentType Guest -Edition Datacenter -ComputerName Nano01 -administratorPassword (ConvertTo-SecureString -string 'Admin@!23' -AsPlainText -Force )
+
+3. With Ip address, DNS IP address and Default Gateway )Nano2
+PS C:\Users\Administrator> New-NanoServerImage -MediaPath D: -BasePath C:\Nanoserver01\base -TargetPath C:\N01\Nanoserver01.vhdx -DeploymentType Guest -Edition Datacenter -ComputerName N01 -package Microsoft-NanoServer-IIS-Package -InterfaceNameOrIndex Ethernet -Ipv4address 192.168.128.10 -Ipv4SubnetMask 255.255.255.0 -Ipv4Gateway 192.168.128.2 -ipv4Dns 192.168.128.100 , 8.8.8.8 -administratorPassword (ConvertTo-SecureString -string 'Admin@!23' -AsPlainText -Force )
+4. Create and start VM
+new-VM -Name N01 -VHDPath C:\N01\Nanoserver01.vhdx -MemoryStartupBytes 1GB -Generation 2 | Start-VM
+
+5. Begin a remote session with Powershell direct
+Enter-PSSession -VMName NANO1
+
+6.View IIS Service and LOG files
+Get-Service W3SVC
+Get-WinEvent -ListLog Microsoft-IIS*
+Get-ChildItem -Path C:\inetpub
+7. View Installed Packages
+Get-WindowsPackage -Online
+
+8. Disable Firewall
+Get-NetFirewallProfile
+Set-NetFirewallProfile -Name Private,Public,Domain -Enable False
+
+Exit PSSession
+
+9. set a host as trusted
+Set-item WSMan:\localhost\client\TrustedHosts -Value $IP
+Get-item WSMan:\localhost\client\TrustedHosts
+Get-Help Enter-PSSession
+Update-help
+Enter-PSSession -ComputerName -Credential administrator
+
+10. Offline Domain Joining
+Run CMD as Administrator from DC
+Request to Domain to join Offline Machine
+>djoin!
+>djoin.exe /provision /DOMAIN ft.local /MACHINE NANOSRV /SAVEFILE C:\NANOSRV\odjblob
+Here from RUN \\192.168.128.50\C$\
+Create a folder naming as NANOSRV before deploying above command
+11.Now From NanoServer Console
+djoin.ext /requestodj/LOADFILE C:\odjblob /WindowsPath C:\windows /localos
+
+use administrator Credential to complete joining request
+Finally Restart NanoServer using Restart-Computer command
+
+11. enable virtualization in hyperV:
+run this on main pc powershell as administrator----
+Set-VMProcessor -VMName Raiyan-DC -ExposeVirtualizationExtensions $true
+
+12. turn all feature on in hyperV:
+Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V -All
+
+
+
+
